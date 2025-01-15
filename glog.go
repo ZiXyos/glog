@@ -12,9 +12,12 @@ import (
 type LogFormat uint8;
 
 type config struct {
-  writer    io.Writer
-  formatter LogFormat
-  options   *slog.HandlerOptions
+  writer        io.Writer
+  formatter     LogFormat
+  options       *slog.HandlerOptions
+  withtimeStamp bool
+  reportCaller  bool
+  styles        *styleConfig
 }
 
 const (
@@ -49,12 +52,19 @@ func New(opts ...Option) (*slog.Logger, error) {
 func createLogger(cfg *config) (*slog.Logger, error) {
   handler := log.New(cfg.writer);
   logger := slog.New(handler);
+  styles := log.DefaultStyles();
+
+  styles.Levels = cfg.styles.level
+
+  handler.SetReportTimestamp(cfg.withtimeStamp);
+  handler.SetReportCaller(cfg.reportCaller);
+  handler.SetStyles(styles);
 
   switch cfg.formatter {
   case JSONFormatter:
-    handler.SetFormatter(log.JSONFormatter)
+    handler.SetFormatter(log.JSONFormatter);
   case TextFormatter:
-    handler.SetFormatter(log.TextFormatter)
+    handler.SetFormatter(log.TextFormatter);
   default:
     return nil, fmt.Errorf("%s: %d", "unknown format:", cfg.formatter)
 }
