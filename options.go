@@ -20,9 +20,28 @@ func WithLevel(level slog.Level) Option {
 }
 
 // WithFormat sets the log format for the logger.
+// Deprecated: WithFormat is deprecated, now use WithTextFormat or WithJsonFormat.
 func WithFormat(format LogFormat) Option {
 	return func(cfg *config) error {
 		cfg.formatter = format;
+
+		return nil
+	}
+}
+
+// WithTextFormat set the formatter to text.
+func WithTextFormat() Option {
+	return func(c *config) error {
+		c.formatter = TextFormatter
+
+		return nil
+	}
+}
+
+// WithJsonFormat set the formatter to json.
+func WithJsonFormat() Option {
+	return func(c *config) error {
+		c.formatter = JSONFormatter
 
 		return nil
 	}

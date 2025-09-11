@@ -24,6 +24,9 @@ func main() {
   logger.Error("THIS IS BAd")
 
 	defLogger, err := glog.NewDefault()
+	if err != nil {
+		panic(err)
+	}
 
 	defLogger.Warn("nothing to see here", "sender", "your dear maintainer")
 }

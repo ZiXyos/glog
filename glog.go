@@ -49,9 +49,10 @@ func New(opts ...Option) (*slog.Logger, error) {
   return createLogger(&cfg)
 }
 
-func NewDefault() (slog.Logger, error) {
+func NewDefault() (*slog.Logger, error) {
 	logger, err := New(
 		WithLevel(slog.LevelDebug),
+		WithJsonFormat(),
 		WithTimeStamp(),
 		WithReportCaller(),
 		WithStyle(
@@ -59,7 +60,7 @@ func NewDefault() (slog.Logger, error) {
 		),
 	)
 
-	return *logger, err
+	return logger, err
 }
 
 func createLogger(cfg *config) (*slog.Logger, error) {
