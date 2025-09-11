@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
+	"github.com/zixyos/glog"
 )
 
 type LogFormat uint8;
@@ -47,6 +48,19 @@ func New(opts ...Option) (*slog.Logger, error) {
 	}
 
   return createLogger(&cfg)
+}
+
+func NewDefault() (slog.Logger, error) {
+	logger, err := New(
+		WithLevel(slog.LevelDebug),
+		WithTimeStamp(),
+		WithReportCaller(),
+		WithStyle(
+			WithErrorStyle(),
+		),
+	)
+
+	return *logger, err
 }
 
 func createLogger(cfg *config) (*slog.Logger, error) {

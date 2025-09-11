@@ -66,3 +66,9 @@ func WithErrorStyle() Style {
     return nil
   }
 }
+
+func withConfig(cfg ...any) Option {
+	return func(cfg *config) error {
+		return nil
+	}
+}
