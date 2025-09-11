@@ -22,4 +22,8 @@ func main() {
 
   logger.Info("NOT SO FAST BOY")
   logger.Error("THIS IS BAd")
+
+	defLogger, err := glog.NewDefault()
+
+	defLogger.Warn("nothing to see here", "sender", "your dear maintainer")
 }

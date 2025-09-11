@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/charmbracelet/log"
-	"github.com/zixyos/glog"
 )
 
 type LogFormat uint8;
