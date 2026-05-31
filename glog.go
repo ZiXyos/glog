@@ -9,47 +9,48 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-type LogFormat uint8;
+type LogFormat uint8
 
 type config struct {
-  writer        io.Writer
-  formatter     LogFormat
-  options       *slog.HandlerOptions
-  withtimeStamp bool
-  reportCaller  bool
-  styles        *styleConfig
+	writer        io.Writer
+	formatter     LogFormat
+	options       *slog.HandlerOptions
+	handlers      []slog.Handler
+	withtimeStamp bool
+	reportCaller  bool
+	styles        *styleConfig
 }
 
 const (
-  DefaultFormatter LogFormat = iota;
-  JSONFormatter;
-  TextFormatter;
-);
+	DefaultFormatter LogFormat = iota
+	JSONFormatter
+	TextFormatter
+)
 
 func New(opts ...Option) (*slog.Logger, error) {
-  cfg := config{
-    writer: os.Stdout,
-    options: &slog.HandlerOptions{
-      Level: slog.LevelInfo,
-      ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
+	cfg := config{
+		writer: os.Stdout,
+		options: &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 				if a.Key == slog.MessageKey {
 					return slog.Attr{Key: "Message", Value: a.Value}
 				}
 				return a
 			},
-    },
-  }
+		},
+	}
 
-  for _, opt := range opts {
+	for _, opt := range opts {
 		if err := opt(&cfg); err != nil {
 			return nil, err
 		}
 	}
 
-  return createLogger(&cfg)
+	return createLogger(&cfg)
 }
 
-func NewDefault() (*slog.Logger, error) {
+func NewDefault(handlers ...slog.Handler) (*slog.Logger, error) {
 	logger, err := New(
 		WithLevel(slog.LevelDebug),
 		WithJsonFormat(),
@@ -58,31 +59,31 @@ func NewDefault() (*slog.Logger, error) {
 		WithStyle(
 			WithErrorStyle(),
 		),
+		WithHandler(handlers...),
 	)
 
 	return logger, err
 }
 
 func createLogger(cfg *config) (*slog.Logger, error) {
-  handler := log.New(cfg.writer);
-  logger := slog.New(handler);
-  styles := log.DefaultStyles();
+	handler := log.New(cfg.writer)
+	logger := slog.New(handler)
+	styles := log.DefaultStyles()
 
-  styles.Levels = cfg.styles.level
+	styles.Levels = cfg.styles.level
 
-  handler.SetReportTimestamp(cfg.withtimeStamp);
-  handler.SetReportCaller(cfg.reportCaller);
-  handler.SetStyles(styles);
+	handler.SetReportTimestamp(cfg.withtimeStamp)
+	handler.SetReportCaller(cfg.reportCaller)
+	handler.SetStyles(styles)
 
-  switch cfg.formatter {
-  case JSONFormatter:
-    handler.SetFormatter(log.JSONFormatter);
-  case TextFormatter:
-    handler.SetFormatter(log.TextFormatter);
-  default:
-    return nil, fmt.Errorf("%s: %d", "unknown format:", cfg.formatter)
+	switch cfg.formatter {
+	case JSONFormatter:
+		handler.SetFormatter(log.JSONFormatter)
+	case TextFormatter:
+		handler.SetFormatter(log.TextFormatter)
+	default:
+		return nil, fmt.Errorf("%s: %d", "unknown format:", cfg.formatter)
+	}
+
+	return logger, nil
 }
-
-  return logger, nil;
-}
-
