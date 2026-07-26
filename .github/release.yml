@@ -1,0 +1,18 @@
+# Groups the pull requests that GitHub lists in generated release notes.
+# Matching is by PR label, so unlabelled PRs fall through to "Other Changes".
+changelog:
+  categories:
+    - title: ⚠️ Breaking Changes
+      labels: [breaking-change, breaking]
+    - title: 🚀 Features
+      labels: [feature, feat, enhancement]
+    - title: 🐛 Bug Fixes
+      labels: [bug, fix, qfix]
+    - title: 📚 Documentation
+      labels: [documentation, docs]
+    - title: 📦 Dependencies
+      labels: [dependencies, renovate]
+    - title: 🧰 Maintenance
+      labels: [chore, ci, refactor, test, style]
+    - title: Other Changes
+      labels: ['*']
