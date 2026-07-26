@@ -6,21 +6,21 @@ import (
 )
 
 type styleConfig struct {
-  level map[log.Level]lipgloss.Style 
+	level map[log.Level]lipgloss.Style
 }
 
-type Style func(*styleConfig) error;
+type Style func(*styleConfig) error
 
 func newStyle(styles ...Style) (*styleConfig, error) {
-  stylecfg := styleConfig{
-    level: log.DefaultStyles().Levels,
-  }
+	stylecfg := styleConfig{
+		level: log.DefaultStyles().Levels,
+	}
 
-  for _, styleOpt := range styles {
-    if err := styleOpt(&stylecfg); err != nil {
-      return nil, err
-    }
-  }
+	for _, styleOpt := range styles {
+		if err := styleOpt(&stylecfg); err != nil {
+			return nil, err
+		}
+	}
 
-  return &stylecfg, nil
+	return &stylecfg, nil
 }

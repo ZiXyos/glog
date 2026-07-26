@@ -67,16 +67,28 @@ func NewDefault(handlers ...slog.Handler) (*slog.Logger, error) {
 
 func createLogger(cfg *config) (*slog.Logger, error) {
 	handler := log.New(cfg.writer)
-	logger := slog.New(handler)
 	styles := log.DefaultStyles()
 
-	styles.Levels = cfg.styles.level
+	// Guard against nil styles: only assign if WithStyle was passed
+	if cfg.styles != nil {
+		styles.Levels = cfg.styles.level
+	}
 
 	handler.SetReportTimestamp(cfg.withtimeStamp)
 	handler.SetReportCaller(cfg.reportCaller)
 	handler.SetStyles(styles)
 
+	// charmbracelet/log.Level values are numerically identical to slog.Level:
+	// Debug -4, Info 0, Warn 4, Error 8. Direct cast is safe and intentional.
+	level := slog.LevelInfo // default
+	if cfg.options.Level != nil {
+		level = cfg.options.Level.Level()
+	}
+	handler.SetLevel(log.Level(level))
+
 	switch cfg.formatter {
+	case DefaultFormatter:
+		// No-op: charmbracelet's built-in default is already the pretty text formatter
 	case JSONFormatter:
 		handler.SetFormatter(log.JSONFormatter)
 	case TextFormatter:
@@ -84,6 +96,10 @@ func createLogger(cfg *config) (*slog.Logger, error) {
 	default:
 		return nil, fmt.Errorf("%s: %d", "unknown format:", cfg.formatter)
 	}
+
+	// Build final handler with terminal handler first, then injected handlers
+	finalHandler := newMultiHandler(append([]slog.Handler{handler}, cfg.handlers...)...)
+	logger := slog.New(finalHandler)
 
 	return logger, nil
 }
