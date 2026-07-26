@@ -1,6 +1,8 @@
 package glog
 
 import (
+	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/charmbracelet/lipgloss"
@@ -9,6 +11,19 @@ import (
 
 // Option provide a function to set configuration
 type Option func(*config) error
+
+// WithWriter sets the destination for the terminal handler. Defaults to
+// os.Stdout. Useful for redirecting output to a file or capturing it in tests.
+func WithWriter(w io.Writer) Option {
+	return func(cfg *config) error {
+		if w == nil {
+			return fmt.Errorf("writer is nil")
+		}
+		cfg.writer = w
+
+		return nil
+	}
+}
 
 // WithLevel sets the log level for the logger.
 func WithLevel(level slog.Level) Option {
@@ -86,6 +101,9 @@ func WithErrorStyle() Style {
 	}
 }
 
+// WithHandler appends additional slog.Handler instances to the logger.
+// Every log record goes to both the terminal (charmbracelet/log) handler
+// and each provided handler, enabling multi-destination logging.
 func WithHandler(handlers ...slog.Handler) Option {
 	return func(cfg *config) error {
 		cfg.handlers = handlers
