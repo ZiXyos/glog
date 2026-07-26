@@ -1,0 +1,86 @@
+name: Release
+
+# Manual promotion. Takes whatever the rc pre-releases have accumulated and
+# publishes it as a stable vX.Y.Z, using the same GitHub-generated notes.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. v0.3.0). Defaults to the pending pre-release version.'
+        required: false
+        type: string
+      cleanup_prereleases:
+        description: 'Delete the rc pre-releases and their tags once published'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    name: Publish release
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
+          CLEANUP: ${{ inputs.cleanup_prereleases }}
+        run: |
+          set -euo pipefail
+
+          # Version comes from the input, or from the rc tags waiting to ship.
+          if [ -n "$INPUT_VERSION" ]; then
+            version="v${INPUT_VERSION#v}"
+          else
+            version=$(git tag -l 'v*-rc.*' --sort=-v:refname \
+              | head -n 1 | sed -E 's/-rc\.[0-9]+$//')
+          fi
+          if [ -z "$version" ]; then
+            echo "::error::No pending pre-release found. Pass an explicit version input." >&2
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "::error::$version is already tagged." >&2
+            exit 1
+          fi
+
+          stable=$(git tag -l 'v*' --sort=-v:refname \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | head -n 1 || true)
+
+          # Tag master's tip, not $GITHUB_SHA: the workflow can be dispatched
+          # from any ref, but the release always comes off master.
+          args=(--latest --generate-notes --title "$version" --target "$(git rev-parse HEAD)")
+          if [ -n "$stable" ]; then
+            args+=(--notes-start-tag "$stable")
+          fi
+
+          gh release create "$version" "${args[@]}"
+          echo "Released $version" >> "$GITHUB_STEP_SUMMARY"
+
+          # The rc releases were staging for this one; their notes are a subset
+          # of what just shipped, so clear them out unless asked not to.
+          if [ "$CLEANUP" = "true" ]; then
+            gh release list --limit 100 --json tagName,isPrerelease \
+              --jq ".[] | select(.isPrerelease) | select(.tagName | startswith(\"$version-rc.\")) | .tagName" \
+            | while read -r rc; do
+                echo "Removing $rc"
+                gh release delete "$rc" --yes --cleanup-tag
+              done
+          fi
