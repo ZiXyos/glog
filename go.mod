@@ -4,7 +4,7 @@ go 1.23.4
 
 require (
 	github.com/charmbracelet/lipgloss v0.10.0
-	github.com/charmbracelet/log v0.4.0
+	github.com/charmbracelet/log/v2 v2.0.1
 )
 
 require (
