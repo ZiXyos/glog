@@ -3,7 +3,7 @@ module github.com/zixyos/glog
 go 1.23.4
 
 require (
-	github.com/charmbracelet/lipgloss v0.10.0
+	github.com/charmbracelet/lipgloss/v2 v2.0.6
 	github.com/charmbracelet/log v0.4.0
 )
 
